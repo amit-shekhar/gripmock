@@ -48,7 +48,7 @@ func TestStub(t *testing.T) {
 				return httptest.NewRequest("GET", "/", nil)
 			},
 			handler: listStub,
-			expect:  "{\"Testing\":{\"TestMethod\":[{\"Input\":{\"equals\":{\"Hola\":\"Mundo\"},\"contains\":null,\"matches\":null},\"Output\":{\"data\":{\"Hello\":\"World\"},\"error\":\"\"}}]}}\n",
+			expect:  "{\"Testing\":{\"TestMethod\":[{\"Input\":{\"equals\":{\"Hola\":\"Mundo\"},\"contains\":null,\"matches\":null},\"Output\":{\"data\":{\"Hello\":\"World\"},\"error\":\"\",\"meta\":{\"priority\":5,\"fixedDelayMilliseconds\":0}}}]}}\n",
 		},
 		{
 			name: "find stub equals",
@@ -57,7 +57,7 @@ func TestStub(t *testing.T) {
 				return httptest.NewRequest("POST", "/find", bytes.NewReader([]byte(payload)))
 			},
 			handler: handleFindStub,
-			expect:  "{\"data\":{\"Hello\":\"World\"},\"error\":\"\"}\n",
+			expect:  "{\"data\":{\"Hello\":\"World\"},\"error\":\"\",\"meta\":{\"priority\":5,\"fixedDelayMilliseconds\":0}}\n",
 		},
 		{
 			name: "add nested stub equals",
@@ -97,7 +97,7 @@ func TestStub(t *testing.T) {
 				return httptest.NewRequest("POST", "/find", bytes.NewReader([]byte(payload)))
 			},
 			handler: handleFindStub,
-			expect:  "{\"data\":{\"Hello\":\"World\"},\"error\":\"\"}\n",
+			expect:  "{\"data\":{\"Hello\":\"World\"},\"error\":\"\",\"meta\":{\"priority\":5,\"fixedDelayMilliseconds\":0}}\n",
 		},
 		{
 			name: "add stub contains",
@@ -137,7 +137,7 @@ func TestStub(t *testing.T) {
 				return httptest.NewRequest("GET", "/find", bytes.NewReader([]byte(payload)))
 			},
 			handler: handleFindStub,
-			expect:  "{\"data\":{\"hello\":\"world\"},\"error\":\"\"}\n",
+			expect:  "{\"data\":{\"hello\":\"world\"},\"error\":\"\",\"meta\":{\"priority\":5,\"fixedDelayMilliseconds\":0}}\n",
 		},
 		{
 			name: "add nested stub contains",
@@ -186,7 +186,7 @@ func TestStub(t *testing.T) {
 				return httptest.NewRequest("GET", "/find", bytes.NewReader([]byte(payload)))
 			},
 			handler: handleFindStub,
-			expect:  "{\"data\":{\"hello\":\"world\"},\"error\":\"\"}\n",
+			expect:  "{\"data\":{\"hello\":\"world\"},\"error\":\"\",\"meta\":{\"priority\":5,\"fixedDelayMilliseconds\":0}}\n",
 		},
 		{
 			name: "add stub matches regex",
@@ -223,7 +223,7 @@ func TestStub(t *testing.T) {
 				return httptest.NewRequest("GET", "/find", bytes.NewReader([]byte(payload)))
 			},
 			handler: handleFindStub,
-			expect:  "{\"data\":{\"reply\":\"OK\"},\"error\":\"\"}\n",
+			expect:  "{\"data\":{\"reply\":\"OK\"},\"error\":\"\",\"meta\":{\"priority\":5,\"fixedDelayMilliseconds\":0}}\n",
 		},
 		{
 			name: "add nested stub matches regex",
@@ -275,7 +275,7 @@ func TestStub(t *testing.T) {
 				return httptest.NewRequest("GET", "/find", bytes.NewReader([]byte(payload)))
 			},
 			handler: handleFindStub,
-			expect:  "{\"data\":{\"reply\":\"OK\"},\"error\":\"\"}\n",
+			expect:  "{\"data\":{\"reply\":\"OK\"},\"error\":\"\",\"meta\":{\"priority\":5,\"fixedDelayMilliseconds\":0}}\n",
 		},
 		{
 			name: "error find stub contains",
@@ -300,6 +300,49 @@ func TestStub(t *testing.T) {
 			},
 			handler: handleFindStub,
 			expect:  "Can't find stub \n\nService: Testing \n\nMethod: TestMethod \n\nInput\n\n{\n\tHola: Dunia\n}\n\nClosest Match \n\nequals:{\n\tHola: Mundo\n}",
+		},
+		{
+			name: "add stub with fixedDelay and priority",
+			mock: func() *http.Request {
+				payload := `{
+						"service": "Testing",
+						"method":"TestMethod",
+						"input":{
+							"equals":{
+								"Hola":"Meta"
+							}
+						},
+						"output":{
+							"data":{
+								"Hello":"Meta"
+							},
+							"meta": {
+								"priority": 1,
+								"fixedDelayMilliseconds": 99
+							}
+						}
+					}`
+				requestBody := bytes.NewReader([]byte(payload))
+				return httptest.NewRequest("POST", "/add", requestBody)
+			},
+			handler: addStub,
+			expect:  `Success add stub`,
+		},
+		{
+			name: "find nested stub matches regex",
+			mock: func() *http.Request {
+				payload := `{
+						"service":"Testing",
+						"method":"TestMethod",
+						"data":{
+								"Hola":"Meta"
+							}
+						}
+					}`
+				return httptest.NewRequest("GET", "/find", bytes.NewReader([]byte(payload)))
+			},
+			handler: handleFindStub,
+			expect:  "{\"data\":{\"Hello\":\"Meta\"},\"error\":\"\",\"meta\":{\"priority\":1,\"fixedDelayMilliseconds\":99}}\n",
 		},
 	}
 

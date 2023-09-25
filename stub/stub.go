@@ -7,7 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	
+
 	"github.com/go-chi/chi"
 )
 
@@ -59,9 +59,15 @@ type Input struct {
 	Matches  map[string]interface{} `json:"matches"`
 }
 
+type Meta struct {
+	Priority               int `json:"priority"`               // minValue: 1, maxValue: INT_MAX, defaultValue: 5, 1 has highest priority
+	FixedDelayMilliseconds int `json:"fixedDelayMilliseconds"` // min: 0
+}
+
 type Output struct {
 	Data  map[string]interface{} `json:"data"`
 	Error string                 `json:"error"`
+	Meta  Meta                   `json:"meta"`
 }
 
 func addStub(w http.ResponseWriter, r *http.Request) {
@@ -106,7 +112,7 @@ func validateStub(stub *Stub) error {
 	if stub.Method == "" {
 		return fmt.Errorf("Method name can't be emtpy")
 	}
-	
+
 	// due to golang implementation
 	// method name must capital
 	stub.Method = strings.Title(stub.Method)
@@ -131,9 +137,10 @@ func validateStub(stub *Stub) error {
 }
 
 type findStubPayload struct {
-	Service string                 `json:"service"`
-	Method  string                 `json:"method"`
-	Data    map[string]interface{} `json:"data"`
+	Service         string                 `json:"service"`
+	Method          string                 `json:"method"`
+	Data            map[string]interface{} `json:"data"`
+	FromAdminServer bool
 }
 
 func handleFindStub(w http.ResponseWriter, r *http.Request) {
@@ -143,11 +150,11 @@ func handleFindStub(w http.ResponseWriter, r *http.Request) {
 		responseError(err, w)
 		return
 	}
-	
+
 	// due to golang implementation
 	// method name must capital
 	stub.Method = strings.Title(stub.Method)
-	
+	stub.FromAdminServer = true
 	output, err := findStub(stub)
 	if err != nil {
 		log.Println(err)

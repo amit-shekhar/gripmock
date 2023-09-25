@@ -7,7 +7,9 @@ import (
 	"log"
 	"reflect"
 	"regexp"
+	"sort"
 	"sync"
+	"time"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
 )
@@ -38,10 +40,20 @@ func (sm *stubMapping) storeStub(stub *Stub) error {
 		Input:  stub.Input,
 		Output: stub.Output,
 	}
+
+	if strg.Output.Meta.Priority < 1 {
+		strg.Output.Meta.Priority = 5
+	}
+
 	if (*sm)[stub.Service] == nil {
 		(*sm)[stub.Service] = make(map[string][]storage)
 	}
 	(*sm)[stub.Service][stub.Method] = append((*sm)[stub.Service][stub.Method], strg)
+
+	// saving expectations in sorted order
+	sort.Slice((*sm)[stub.Service][stub.Method], func(i, j int) bool {
+		return (*sm)[stub.Service][stub.Method][i].Output.Meta.Priority < (*sm)[stub.Service][stub.Method][j].Output.Meta.Priority
+	})
 	return nil
 }
 
@@ -77,6 +89,10 @@ func findStub(stub *findStubPayload) (*Output, error) {
 		if expect := stubrange.Input.Equals; expect != nil {
 			closestMatch = append(closestMatch, closeMatch{"equals", expect})
 			if equals(stub.Data, expect) {
+				output := &stubrange.Output
+				if !stub.FromAdminServer {
+					time.Sleep(time.Millisecond * time.Duration(output.Meta.FixedDelayMilliseconds))
+				}
 				return &stubrange.Output, nil
 			}
 		}
@@ -84,6 +100,10 @@ func findStub(stub *findStubPayload) (*Output, error) {
 		if expect := stubrange.Input.Contains; expect != nil {
 			closestMatch = append(closestMatch, closeMatch{"contains", expect})
 			if contains(stubrange.Input.Contains, stub.Data) {
+				output := &stubrange.Output
+				if !stub.FromAdminServer {
+					time.Sleep(time.Millisecond * time.Duration(output.Meta.FixedDelayMilliseconds))
+				}
 				return &stubrange.Output, nil
 			}
 		}
@@ -91,6 +111,10 @@ func findStub(stub *findStubPayload) (*Output, error) {
 		if expect := stubrange.Input.Matches; expect != nil {
 			closestMatch = append(closestMatch, closeMatch{"matches", expect})
 			if matches(stubrange.Input.Matches, stub.Data) {
+				output := &stubrange.Output
+				if !stub.FromAdminServer {
+					time.Sleep(time.Millisecond * time.Duration(output.Meta.FixedDelayMilliseconds))
+				}
 				return &stubrange.Output, nil
 			}
 		}
